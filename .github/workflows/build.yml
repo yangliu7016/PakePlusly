@@ -30,12 +30,15 @@ jobs:
           npm install -g pnpm
           pnpm install
 
+      - name: Initialize Android
+        run: pnpm tauri android init
+        env:
+          CI: true
+
       - name: Build APK
-        uses: tauri-apps/tauri-action@v0
+        run: pnpm tauri android build --apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: android build --apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
