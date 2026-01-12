@@ -1,22 +1,1292 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="icon" type="image/svg+xml" href="/app.svg" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <script src="/vconsole.min.js"></script>
-        <title>PakePlus</title>
-      <script type="module" crossorigin src="/assets/index-0rL66z1s.js"></script>
-      <link rel="modulepreload" crossorigin href="/assets/vue-D5zJM850.js">
-      <link rel="modulepreload" crossorigin href="/assets/largeLibrary-C-1G2k3o.js">
-      <link rel="modulepreload" crossorigin href="/assets/element-ChwzRr26.js">
-      <link rel="modulepreload" crossorigin href="/assets/pinia-YzwrLR2P.js">
-      <link rel="modulepreload" crossorigin href="/assets/router-wX7hEMOc.js">
-      <link rel="modulepreload" crossorigin href="/assets/codemirror-Buzjj2AI.js">
-      <link rel="stylesheet" crossorigin href="/assets/index-D9kg7XzF.css">
-    </head>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wealth (Focus+ SentCapsule+ LoanMethodCapsule)</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --loan-primary: #1677ff;
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --border: #e5e7eb;
+            --input-bg: #f9fafb;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --sent-pos: #ffe4e6; --sent-pos-text: #be123c;
+            --sent-neg: #d1fae5; --sent-neg-text: #047857;
+            --sent-neu: #f3f4f6; --sent-neu-text: #4b5563;
+            --type-sector: #3b82f6; --type-mind: #f59e0b; --type-know: #10b981;
+            --alert-bg: #fff2f0; --alert-border: #ffccc7; --alert-text: #cf1322;
+        }
 
-    <body>
-        <div id="app"></div>
-    </body>
+        [data-theme="dark"] {
+            --primary: #818cf8; --loan-primary: #4096ff;
+            --bg-body: #111827; --bg-card: #1f2937;
+            --text-main: #f3f4f6; --text-sub: #9ca3af;
+            --border: #374151; --input-bg: #111827;
+            --alert-bg: #2a1215; --alert-border: #58181c; --alert-text: #ff7875; --info: #60a5fa;
+            --sent-pos: #4c0519; --sent-pos-text: #fda4af;
+            --sent-neg: #064e3b; --sent-neg-text: #6ee7b7;
+            --sent-neu: #374151; --sent-neu-text: #9ca3af;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-body); color: var(--text-main); line-height: 1.5; padding-bottom: 80px; font-size: 14px; }
+
+        /* === 导航 === */
+        .global-nav { background: var(--bg-card); padding: 10px 15px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 8px; }
+        .nav-top { display: flex; justify-content: space-between; align-items: center; }
+        .header-left { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+        .app-title { font-size: 18px; font-weight: 800; background: -webkit-linear-gradient(0deg, var(--primary), var(--loan-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
+        
+        .sync-badge { font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; color: var(--text-sub); background: var(--input-bg); padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; user-select: none; }
+        .sync-badge:active { transform: scale(0.95); background: var(--border); }
+        .sync-icon { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #d1d5db; }
+        .status-idle .sync-icon { background: var(--success); }
+        .status-error .sync-icon { background: var(--danger); }
+        .status-syncing .sync-icon { background: transparent; border: 2px solid var(--info); border-top-color: transparent; width: 8px; height: 8px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .module-switcher { display: flex; background: var(--input-bg); padding: 3px; border-radius: 10px; border: 1px solid var(--border); width: 100%; margin: 0 auto; }
+        .module-tab { flex: 1; text-align: center; padding: 6px; font-size: 13px; font-weight: 700; cursor: pointer; border-radius: 8px; color: var(--text-sub); transition: all 0.2s; }
+        .module-tab.active { background: var(--bg-card); box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: var(--text-main); }
+        .module-tab.fund-active { color: var(--primary); }
+        .module-tab.loan-active { color: var(--loan-primary); }
+
+        .container { max-width: 950px; margin: 15px auto; padding: 0 12px; display: none; }
+        .container.active-view { display: block; animation: fadeInView 0.2s ease-out; }
+        @keyframes fadeInView { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .card { background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+
+        /* === 控件基础 === */
+        .btn { padding: 10px 0; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap:6px; transition: opacity 0.2s; width: 100%; }
+        .btn:active { opacity: 0.8; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-loan { background: var(--loan-primary); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-sub); padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 6px; width: auto; }
+        .btn-icon { background: transparent; border: 1px solid var(--border); color: var(--text-sub); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; font-size: 16px; }
+
+        input, select, textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main); font-size: 16px; outline: none; -webkit-appearance: none; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+        .loan-view input:focus, .loan-view select:focus { border-color: var(--loan-primary); }
+        input[type="date"] { padding: 9px 10px; min-height: 42px; }
+
+        /* === 快捷选择胶囊 === */
+        .quick-options { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .quick-opt-btn { font-size: 11px; padding: 3px 10px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; color: var(--text-sub); cursor: pointer; transition: all 0.2s; user-select: none; }
+        .quick-opt-btn:active { transform: scale(0.95); background: var(--border); }
+        
+        /* 胶囊选中高亮态 */
+        .fm-view .quick-opt-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .loan-view .quick-opt-btn:hover { border-color: var(--loan-primary); color: var(--loan-primary); }
+
+        /* 态度胶囊专用选中样式 */
+        .quick-opt-btn.sent-sel-pos { background: var(--sent-pos); color: var(--sent-pos-text); border-color: var(--sent-pos-text); font-weight: 700; }
+        .quick-opt-btn.sent-sel-neg { background: var(--sent-neg); color: var(--sent-neg-text); border-color: var(--sent-neg-text); font-weight: 700; }
+        .quick-opt-btn.sent-sel-neu { background: #e5e7eb; color: #374151; border-color: #9ca3af; font-weight: 700; }
+
+        /* 贷款方式胶囊专用选中样式 */
+        .quick-opt-btn.method-sel { background: var(--loan-primary); color: white; border-color: var(--loan-primary); font-weight: 700; }
+
+        /* === 组合控件 & 标签系统 === */
+        .combo-group { display: flex; gap: 6px; align-items: center; }
+        .combo-select { flex: 0 0 85px; font-size: 13px; padding: 10px 4px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; } 
+        .combo-input { flex: 1; min-width: 0; font-size: 16px; }
+        
+        .tags-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 0; }
+        .tag-item { background: var(--input-bg); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; font-size: 12px; display: flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 600; animation: fadeIn 0.2s; }
+        .tag-remove { cursor: pointer; opacity: 0.6; font-weight: bold; font-size: 14px; padding: 2px; }
+        .tag-remove:hover { opacity: 1; color: var(--danger); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* === 基金模块 === */
+        .fm-type-tabs { display: flex; background: var(--input-bg); padding: 3px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--border); }
+        .fm-type-tab { flex: 1; text-align: center; padding: 8px 4px; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 8px; color: var(--text-sub); transition: all 0.2s; }
+        .fm-type-tab.active { background: var(--bg-card); box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: var(--text-main); }
+        
+        .fm-form-section { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 10px; padding: 12px; position: relative; }
+        .fm-form-section-label { position: absolute; top: -9px; left: 10px; background: var(--bg-card); padding: 0 5px; font-size: 11px; color: var(--text-sub); font-weight: 700; line-height: 1; }
+        .fm-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        .fm-col { flex: 1; display: flex; flex-direction: column; min-width: 130px; }
+        .sub-note { margin-top: 4px; border: none; border-bottom: 1px dashed var(--border); border-radius: 0; background: transparent; padding: 4px 0; font-size: 12px; color: var(--text-sub); }
+
+        .fm-filter-header { font-weight: 800; font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+        .fm-filter-bar { background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }
+        
+        .fm-time-presets { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; align-items: center; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .fm-time-presets::-webkit-scrollbar { display: none; }
+        .fm-time-btn { padding: 6px 10px; border-radius: 20px; background: var(--bg-card); border: 1px solid var(--border); font-size: 12px; cursor: pointer; color: var(--text-sub); white-space: nowrap; flex-shrink: 0; }
+        .fm-time-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .fm-n-input { width: 36px; padding: 4px; text-align: center; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); font-size: 12px; }
+        
+        .fm-filter-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: 100%; }
+        .fm-filter-select { padding: 8px; font-size: 12px; border-radius: 8px; }
+
+        .fm-log-item { border-left: 4px solid transparent; padding-left: 12px; margin-bottom: 20px; position: relative; }
+        .fm-log-item.type-sector { border-left-color: var(--type-sector); }
+        .fm-log-item.type-mind { border-left-color: var(--type-mind); }
+        .fm-log-item.type-know { border-left-color: var(--type-know); }
+        .fm-log-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+        .fm-log-date { font-size: 11px; color: var(--text-sub); font-weight: 700; background: var(--input-bg); padding: 2px 6px; border-radius: 4px; display: inline-block; }
+        .fm-attr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; }
+        .fm-attr-box { background: var(--input-bg); border-radius: 6px; padding: 8px; border: 1px solid var(--border); }
+        .fm-attr-title { font-size: 10px; color: var(--text-sub); font-weight: 700; }
+        .fm-attr-val { font-size: 13px; font-weight: 600; color: var(--text-main); }
+        .fm-main-content-box { margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 14px; line-height: 1.6; word-break: break-all; }
+        .fm-box-mind { background: #fffbeb; color: #92400e; border: 1px solid #fcd34d; }
+        .fm-box-know { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
+        
+        .sent-tag { display: inline-block; padding: 1px 4px; border-radius: 4px; font-size: 10px; font-weight: 800; margin-left: 4px; vertical-align: middle; }
+        .sent-pos { background: var(--sent-pos); color: var(--sent-pos-text); border: 1px solid var(--sent-pos-text); }
+        .sent-neg { background: var(--sent-neg); color: var(--sent-neg-text); border: 1px solid var(--sent-neg-text); }
+        .sent-neu { background: var(--sent-neu); color: var(--sent-neu-text); border: 1px solid var(--sent-neu-text); }
+
+        /* === 借贷模块 === */
+        .global-alert-container { display: none; margin: 15px auto 0 auto; max-width: 950px; padding: 0 12px; animation: slideDown 0.3s ease-out; }
+        .lm-alert-box { background: var(--alert-bg); border: 1px solid var(--alert-border); border-radius: 12px; padding: 12px; }
+        .lm-alert-header { font-weight: 800; color: var(--alert-text); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .lm-alert-list { display: flex; flex-direction: column; gap: 8px; }
+        .lm-alert-item { background: rgba(255,255,255,0.7); padding: 10px; border-radius: 8px; border-left: 4px solid var(--danger); font-size: 13px; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        
+        .lm-form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 15px; }
+        @media (min-width: 600px) {
+             .lm-form-grid { grid-template-columns: 1fr 1fr; }
+             .fm-filter-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+        }
+
+        .lm-input-group { display: flex; flex-direction: column; }
+        .lm-label { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; font-weight: 700; }
+        .lm-free-box { background: #fff7e6; border: 1px dashed #ffd591; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+        
+        .lm-loan-item { border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 15px; background: var(--bg-card); }
+        .lm-loan-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .lm-loan-total { font-weight: 800; font-size: 18px; color: var(--loan-primary); white-space: nowrap; margin-left: 10px;}
+        .lm-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+        .lm-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--input-bg); border: 1px solid var(--border); color: var(--text-sub); }
+        .lm-tag.free { background: #fff1f0; color: #cf1322; border-color: #ffa39e; }
+        
+        .lm-progress-box { margin: 8px 0; }
+        .lm-progress-bar { height: 6px; background: var(--input-bg); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+        .lm-progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
+        .lm-plan-list { margin-top: 15px; border-top: 1px dashed var(--border); display: none; }
+        .lm-plan-list.show { display: block; }
+        .lm-plan-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 13px; }
+        .lm-plan-row.paid { opacity: 0.6; }
+        .lm-plan-row.free-active { background: #fffbe6; margin: 0 -10px; padding: 10px 10px; border-bottom:1px solid #f0f0f0; }
+        .lm-btn-pay { padding: 4px 10px; font-size: 12px; border-radius: 6px; border: 1px solid var(--loan-primary); color: var(--loan-primary); background: transparent; cursor: pointer; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+        .modal { background: var(--bg-card); width: 100%; max-width: 600px; padding: 20px; border-radius: 12px; max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .backup-file-item { padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 13px; cursor: pointer; }
+        
+        /* Config Limit Input */
+        .limit-input { width: 50px; padding: 2px 4px; font-size: 11px; border: 1px solid var(--border); border-radius: 4px; text-align: center; margin-left: 8px; }
+        .cfg-label-row { display: flex; align-items: center; margin-bottom: 4px; font-weight: bold; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<header class="global-nav">
+    <div class="nav-top">
+        <div class="header-left">
+            <div class="app-title">Wealth</div>
+            <div id="syncBadge" class="sync-badge status-idle" onclick="syncGitHub('pull', false)">
+                <span class="sync-icon"></span><span id="syncText">本地</span>
+            </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <button class="btn-icon" onclick="openSyncModal()" title="云同步设置">☁️</button>
+            <button class="btn-icon" onclick="openCurrentConfig()" title="当前模块配置">⚙️</button>
+            <button class="btn-icon" onclick="toggleTheme()" title="切换主题">🌗</button>
+        </div>
+    </div>
+    <div class="module-switcher">
+        <div class="module-tab fund-active active" onclick="switchModule('fund')" id="tab-fund">📈 资产·Fund</div>
+        <div class="module-tab loan-active" onclick="switchModule('loan')" id="tab-loan">💳 负债·Loan</div>
+    </div>
+</header>
+
+<div id="global_alertContainer" class="global-alert-container">
+    <div class="lm-alert-box">
+        <div class="lm-alert-header">🔔 近期还款 / 免息到期 (7天内)</div>
+        <div id="global_alertList" class="lm-alert-list"></div>
+    </div>
+</div>
+
+<!-- ================= Fund Master ================= -->
+<div class="container active-view fm-view" id="view-fund">
+    <div class="card" id="fm_inputCard">
+        <div class="fm-filter-header">
+            <span id="fm_formTitle">📝 录入新记录</span>
+            <button class="btn-outline" onclick="fm_resetForm()">重置</button>
+        </div>
+        <div class="fm-type-tabs">
+            <div class="fm-type-tab active" data-type="sector" onclick="fm_switchType('sector')">📊 板块/个基</div>
+            <div class="fm-type-tab" data-type="mind" onclick="fm_switchType('mind')">💡 投资心得</div>
+            <div class="fm-type-tab" data-type="know" onclick="fm_switchType('know')">📚 知识百科</div>
+        </div>
+        <input type="hidden" id="fm_recordType" value="sector">
+        <input type="hidden" id="fm_editId">
+        <input type="hidden" id="fm_sectorName">
+
+        <div class="fm-row">
+            <div class="fm-col" style="flex:0.6"><label class="fm-form-section-label">日期</label><input type="date" id="fm_date"></div>
+            <div class="fm-col" id="fm_sectorNameGroup">
+                <label class="fm-form-section-label">板块/基金名称 (支持多选)</label>
+                <div class="combo-group">
+                    <select id="fm_sector_helper" class="combo-select" onchange="fm_addSectorTag(this.value); this.value='';"><option value="">快选...</option></select>
+                    <input type="text" id="fm_sectorInputTemp" class="combo-input" placeholder="输入按回车..." onkeydown="if(event.key==='Enter'){event.preventDefault();fm_addSectorTag(this.value);this.value='';}">
+                </div>
+                <!-- 快捷选项：板块 -->
+                <div id="fm_quick_sectors" class="quick-options"></div>
+                <div id="fm_sectorTags" class="tags-container"></div>
+            </div>
+        </div>
+
+        <div class="fm-form-section">
+            <span class="fm-form-section-label">📢 媒体与舆情 (可选)</span>
+            <div class="fm-row">
+                <div class="fm-col" style="flex:0.8">
+                    <select id="fm_mediaPlatform"><option value="">平台...</option></select>
+                    <!-- 快捷选项：媒体平台 -->
+                    <div id="fm_quick_platforms" class="quick-options"></div>
+                </div>
+                <div class="fm-col">
+                    <div class="combo-group">
+                        <select id="fm_kol_helper" class="combo-select" onchange="document.getElementById('fm_mediaKOL').value=this.value; this.value='';"><option value="">快选...</option></select>
+                        <input type="text" id="fm_mediaKOL" class="combo-input" placeholder="博主/大V...">
+                    </div>
+                    <!-- 快捷选项：KOL -->
+                    <div id="fm_quick_kols" class="quick-options"></div>
+                </div>
+            </div>
+            <div class="fm-row">
+                <div class="fm-col" style="flex:1;">
+                    <input type="text" id="fm_mediaContent" placeholder="消息标题/观点...">
+                </div>
+                <!-- 态度胶囊选择 -->
+                <div class="fm-col" style="flex:0.5; min-width:140px;">
+                    <input type="hidden" id="fm_mediaSentiment">
+                    <div id="fm_sentiment_capsules" class="quick-options" style="margin-top:0; justify-content: flex-end;">
+                        <div class="quick-opt-btn" onclick="fm_setSentimentUI('pos')" data-val="pos">🔴 看多</div>
+                        <div class="quick-opt-btn" onclick="fm_setSentimentUI('neg')" data-val="neg">🟢 看空</div>
+                        <div class="quick-opt-btn" onclick="fm_setSentimentUI('neu')" data-val="neu">⚪ 中性</div>
+                    </div>
+                </div>
+            </div>
+            <div class="fm-col" style="margin-top:4px;">
+                <input type="text" id="fm_mediaNote" class="sub-note" placeholder="媒体备注...">
+            </div>
+        </div>
+
+        <div id="fm_sectorFields">
+            <div class="fm-row">
+                <div class="fm-col fm-form-section">
+                    <span class="fm-form-section-label">📊 估值</span>
+                    <select id="fm_valSelect"><option value="">--</option></select>
+                    <!-- 快捷选项：估值 -->
+                    <div id="fm_quick_vals" class="quick-options"></div>
+                    <input type="text" id="fm_valNote" class="sub-note" placeholder="备注...">
+                </div>
+                <div class="fm-col fm-form-section">
+                    <span class="fm-form-section-label">🚩 基本面</span>
+                    <select id="fm_catSelect"><option value="">--</option></select>
+                    <!-- 快捷选项：基本面 -->
+                    <div id="fm_quick_cats" class="quick-options"></div>
+                    <input type="text" id="fm_catNote" class="sub-note" placeholder="备注...">
+                </div>
+            </div>
+             <div class="fm-row">
+                <div class="fm-col fm-form-section">
+                    <span class="fm-form-section-label">🏦 持仓</span>
+                    <select id="fm_posSelect"><option value="">--</option></select>
+                    <!-- 快捷选项：持仓 -->
+                    <div id="fm_quick_pos" class="quick-options"></div>
+                    <input type="text" id="fm_posNote" class="sub-note" placeholder="备注...">
+                </div>
+                <!-- 关注度 -->
+                <div class="fm-col fm-form-section">
+                    <span class="fm-form-section-label">👀 关注度</span>
+                    <select id="fm_focusSelect"><option value="">--</option></select>
+                    <!-- 快捷选项：关注度 -->
+                    <div id="fm_quick_focus" class="quick-options"></div>
+                    <input type="text" id="fm_focusNote" class="sub-note" placeholder="备注...">
+                </div>
+            </div>
+        </div>
+
+        <div class="fm-form-section">
+            <span class="fm-form-section-label" id="fm_mainContentLabel">📝 综合备注</span>
+            <textarea id="fm_mainContent" placeholder="记录逻辑、计划..." style="min-height:80px;"></textarea>
+        </div>
+
+        <button class="btn btn-primary" onclick="fm_addRecord()" id="fm_submitBtn">💾 提交记录</button>
+    </div>
+
+    <div class="card">
+        <div class="fm-filter-header">
+            <span>🔍 筛选仪表盘</span>
+            <span id="fm_resultCount" style="font-weight:normal; font-size:12px; color:var(--text-sub)">共 0 条</span>
+        </div>
+
+        <div class="fm-filter-bar">
+            <div class="fm-time-presets">
+                <div class="fm-time-btn" onclick="fm_setTimeRange('all')">📅 全部</div>
+                <div class="fm-time-btn" onclick="fm_setTimeRange('thisWeek')">📅 本周</div>
+                <div class="fm-time-btn" onclick="fm_setTimeRange('lastWeek')">🔙 上周</div>
+                <div style="border-left:1px solid var(--border); height:16px; margin:0 4px; flex-shrink:0;"></div>
+                <input type="number" id="fm_time_n" value="7" class="fm-n-input" onchange="if(document.querySelector('.fm-time-btn.active').dataset.mode) fm_setTimeRange(document.querySelector('.fm-time-btn.active').dataset.mode)">
+                <span style="font-size:11px;color:var(--text-sub); flex-shrink:0;">天:</span>
+                <div class="fm-time-btn" data-mode="lastN" onclick="fm_setTimeRange('lastN')">⬅️ 近n天</div>
+                <div class="fm-time-btn" data-mode="nextN" onclick="fm_setTimeRange('nextN')">➡️ 未来n天</div>
+            </div>
+
+            <div class="fm-filter-grid">
+                <div style="display: flex; align-items: center; gap: 4px; background: var(--bg-card); padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border); grid-column: span 2;">
+                    <input type="date" id="fm_filterStart" onchange="fm_applyFilters()" style="border:none;padding:2px;background:transparent;width:100%;font-size:12px;">
+                    <span style="font-size:11px;color:var(--text-sub)">至</span>
+                    <input type="date" id="fm_filterEnd" onchange="fm_applyFilters()" style="border:none;padding:2px;background:transparent;width:100%;font-size:12px;">
+                </div>
+                <select id="fm_filterType" onchange="fm_applyFilters()" class="fm-filter-select"><option value="all">🌈 类型: 全部</option><option value="sector">📊 板块</option><option value="mind">💡 心得</option><option value="know">📚 知识</option></select>
+                <select id="fm_filterSector" onchange="fm_applyFilters()" class="fm-filter-select"><option value="all">📁 板块: 全部</option></select>
+                <select id="fm_filterKOL" onchange="fm_applyFilters()" class="fm-filter-select"><option value="">👤 博主: 全部</option></select>
+                <!-- 筛选面板依然保持下拉菜单 -->
+                <select id="fm_filterSentiment" onchange="fm_applyFilters()" class="fm-filter-select"><option value="">🎭 情绪: 全部</option><option value="pos">🔴 积极</option><option value="neg">🟢 消极</option><option value="neu">⚪ 中性</option></select>
+                <select id="fm_filterVal" onchange="fm_applyFilters()" class="fm-filter-select"><option value="">📊 估值: 全部</option></select>
+                <select id="fm_filterCat" onchange="fm_applyFilters()" class="fm-filter-select"><option value="">🚩 基本面: 全部</option></select>
+                <select id="fm_filterPos" onchange="fm_applyFilters()" class="fm-filter-select"><option value="">🏦 持仓: 全部</option></select>
+                <select id="fm_filterFocus" onchange="fm_applyFilters()" class="fm-filter-select"><option value="">👀 关注度: 全部</option></select>
+                <input type="text" id="fm_filterSearch" placeholder="🔍 关键词搜索..." oninput="fm_applyFilters()" class="fm-filter-select" style="grid-column: span 2;">
+            </div>
+        </div>
+        <div id="fm_listContainer"></div>
+    </div>
+</div>
+
+<!-- ================= Loan Master ================= -->
+<div class="container loan-view" id="view-loan">
+    <div class="card" id="lm_formCard">
+        <div class="fm-filter-header">
+            <span id="lm_formTitle">✏️ 录入贷款</span>
+            <button class="btn-outline" onclick="lm_resetForm()">重置</button>
+        </div>
+        <input type="hidden" id="lm_editId">
+
+        <div class="lm-form-grid">
+            <div class="lm-input-group">
+                <label class="lm-label">借款平台</label>
+                <div class="combo-group">
+                    <select id="lm_platform_helper" class="combo-select" onchange="document.getElementById('lm_platform').value=this.value; this.value='';"><option value="">快选...</option></select>
+                    <input type="text" id="lm_platform" class="combo-input" placeholder="平台名称...">
+                </div>
+                <!-- 快捷选项：借款平台 -->
+                <div id="lm_quick_platforms" class="quick-options"></div>
+            </div>
+            <div class="lm-input-group"><label class="lm-label">借款本金</label><input type="number" id="lm_amount" placeholder="0.00"></div>
+            <div class="lm-input-group"><label class="lm-label">起息日期</label><input type="date" id="lm_date" onchange="lm_applyDateOffset()"></div>
+            <div class="lm-input-group"><label class="lm-label">首期还款日 <span style="font-weight:normal;color:var(--text-sub)">(自动+1月)</span></label><input type="date" id="lm_firstPayDate"></div>
+        </div>
+
+        <div class="lm-form-grid">
+            <div class="lm-input-group">
+                <label class="lm-label">年化利率 (%)</label>
+                <div class="combo-group">
+                    <select id="lm_rate_helper" class="combo-select" onchange="document.getElementById('lm_rate').value=this.value; this.value='';"><option value="">快选...</option></select>
+                    <input type="number" id="lm_rate" class="combo-input" placeholder="3.5">
+                </div>
+                <!-- 快捷选项：利率 -->
+                <div id="lm_quick_rates" class="quick-options"></div>
+            </div>
+            <!-- 改造区域：还款方式胶囊 -->
+            <div class="lm-input-group">
+                <label class="lm-label">还款方式</label>
+                <input type="hidden" id="lm_method" value="amortized">
+                <div id="lm_method_capsules" class="quick-options" style="margin-top:0;">
+                    <div class="quick-opt-btn" onclick="lm_setMethodUI('amortized')" data-val="amortized" style="padding:6px 12px;font-size:12px;">等额本息</div>
+                    <div class="quick-opt-btn" onclick="lm_setMethodUI('interest_only')" data-val="interest_only" style="padding:6px 12px;font-size:12px;">先息后本</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lm-form-grid">
+            <div class="lm-input-group"><label class="lm-label">分期期数</label><input type="number" id="lm_periods" value="12"></div>
+            <div class="lm-input-group">
+                <label class="lm-label">每期周期</label>
+                <select id="lm_periodUnit" onchange="lm_applyDateOffset()"><option value="month">1 个月</option><option value="week">1 周</option><option value="day">1 天</option><option value="year">1 年</option></select>
+            </div>
+        </div>
+
+        <div class="lm-free-box">
+            <div class="lm-form-grid" style="margin-bottom:0;">
+                <div class="lm-input-group">
+                    <label class="lm-label" style="color:#d46b08">🎁 免息券/优惠</label>
+                    <select id="lm_freeType" onchange="lm_toggleFreeInput()"><option value="none">无优惠</option><option value="days">前 X 天免息</option><option value="date">截止日期前免息</option></select>
+                </div>
+                <div class="lm-input-group" id="lm_freeInputGroup" style="display:none;">
+                    <label class="lm-label" id="lm_freeLabel">设置详情</label>
+                    <input type="number" id="lm_freeValDays" placeholder="输入天数 (如: 7)" style="display:none">
+                    <input type="date" id="lm_freeValDate" style="display:none">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-loan" onclick="lm_saveLoan()" id="lm_submitBtn">➕ 生成精准还款计划</button>
+    </div>
+    <div id="lm_loanList"></div>
+</div>
+
+<!-- ================= Modals ================= -->
+<div id="fm_configModal" class="modal-overlay">
+    <div class="modal">
+        <div style="display:flex;justify-content:space-between;margin-bottom:15px;"><h3>⚙️ 资产配置</h3><button class="btn-outline" onclick="document.getElementById('fm_configModal').style.display='none'">✕</button></div>
+        <div style="margin-bottom:15px;">
+            <div class="cfg-label-row">常用板块/基金 Top: <input type="number" id="fm_lim_sectors" class="limit-input"></div>
+            <textarea id="fm_cfg_sectors" style="height:60px;"></textarea>
+        </div>
+        <div style="margin-bottom:15px;">
+             <div class="cfg-label-row">媒体平台 Top: <input type="number" id="fm_lim_platforms" class="limit-input"></div>
+            <textarea id="fm_cfg_platforms"></textarea>
+        </div>
+        <div style="margin-bottom:15px;">
+            <div class="cfg-label-row">关注博主 Top: <input type="number" id="fm_lim_kols" class="limit-input"></div>
+            <textarea id="fm_cfg_kols"></textarea>
+        </div>
+        <hr style="border:0; border-top:1px solid var(--border); margin:15px 0;">
+        <div class="fm-row">
+            <div class="fm-col">
+                <div class="cfg-label-row">估值 Top: <input type="number" id="fm_lim_val" class="limit-input"></div>
+                <input type="text" id="fm_cfg_val">
+            </div>
+            <div class="fm-col">
+                <div class="cfg-label-row">基本面 Top: <input type="number" id="fm_lim_cat" class="limit-input"></div>
+                <input type="text" id="fm_cfg_cat">
+            </div>
+        </div>
+        <div class="fm-row">
+            <div class="fm-col">
+                <div class="cfg-label-row">持仓 Top: <input type="number" id="fm_lim_pos" class="limit-input"></div>
+                <input type="text" id="fm_cfg_pos">
+            </div>
+            <div class="fm-col">
+                <div class="cfg-label-row">关注度 Top: <input type="number" id="fm_lim_focus" class="limit-input"></div>
+                <input type="text" id="fm_cfg_focus">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="fm_saveConfig()" style="margin-top:15px;">保存配置</button>
+    </div>
+</div>
+
+<div id="lm_configModal" class="modal-overlay">
+    <div class="modal">
+        <div style="display:flex;justify-content:space-between;margin-bottom:15px;"><h3>⚙️ 负债配置</h3><button class="btn-outline" onclick="document.getElementById('lm_configModal').style.display='none'">✕</button></div>
+        <div class="lm-input-group" style="margin-bottom:15px;">
+            <div class="cfg-label-row">常用借款平台 Top: <input type="number" id="lm_lim_platforms" class="limit-input"></div>
+            <textarea id="lm_cfg_platforms" rows="3"></textarea>
+        </div>
+        <div class="lm-input-group" style="margin-bottom:15px;">
+             <div class="cfg-label-row">常用年化利率 Top: <input type="number" id="lm_lim_rates" class="limit-input"></div>
+             <input type="text" id="lm_cfg_rates">
+        </div>
+        <button class="btn btn-loan" onclick="lm_saveConfig()">保存配置</button>
+    </div>
+</div>
+
+<div id="lm_repayModal" class="modal-overlay">
+    <div class="modal">
+        <div style="font-weight:800;font-size:16px;margin-bottom:15px;">💰 还款计算详情</div>
+        <input type="hidden" id="lm_payLoanId"><input type="hidden" id="lm_payIdx">
+        <div class="fm-attr-box" id="lm_calcProcessBox" style="font-size:12px;margin-bottom:15px;line-height:1.6;"></div>
+        <div class="lm-input-group" style="margin-bottom:10px;"><label class="lm-label">本期应还 (系统)</label><input type="text" id="lm_payExpected" disabled style="background:var(--input-bg); color:var(--text-sub);"></div>
+        <div class="lm-input-group" style="margin-bottom:10px;"><label class="lm-label">实际还款金额</label><input type="number" id="lm_payActual"></div>
+        <div class="lm-input-group"><label class="lm-label">实际还款日期</label><input type="date" id="lm_payDate"></div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="btn-outline" style="flex:1" onclick="document.getElementById('lm_repayModal').style.display='none'">取消</button>
+            <button class="btn btn-loan" style="flex:1" onclick="lm_confirmRepayment()">确认已还</button>
+        </div>
+    </div>
+</div>
+
+<div id="syncModal" class="modal-overlay">
+    <div class="modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h3 style="font-size:16px;">☁️ 云端同步 & 备份</h3>
+            <button class="btn-outline" onclick="document.getElementById('syncModal').style.display='none'">✕</button>
+        </div>
+        <!-- 个人配置入口 -->
+        <div style="margin-bottom:15px; border-bottom:1px dashed var(--border); padding-bottom:10px;">
+            <label class="lm-label">🔐 快速配置口令</label>
+            <input type="password" id="adminCode" placeholder="输入口令自动填充..." oninput="checkAdminCode(this.value)">
+        </div>
+        <div class="lm-input-group" style="margin-bottom:10px;"><label class="lm-label">GitHub Token</label><input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx"></div>
+        <div class="lm-input-group" style="margin-bottom:15px;"><label class="lm-label">GitHub 仓库 (用户名/仓库名)</label><input type="text" id="ghRepo" placeholder="username/repo"></div>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <button class="btn btn-primary" style="flex:1" onclick="saveGhConfigAndSync()">💾 保存并同步</button>
+            <button class="btn btn-outline" style="flex:1; border-color:var(--info); color:var(--info);" onclick="archiveToGitHub()">☁️ 创建永久存档</button>
+        </div>
+        <div style="border-top:1px solid var(--border); padding-top:15px;">
+            <div style="font-weight:700; font-size:14px; margin-bottom:10px;">⏳ 云端时光机</div>
+            <button class="btn-outline" style="width:100%; margin-bottom:10px;" onclick="listCloudBackups()">📂 查看云端存档列表</button>
+            <div id="cloudBackupList" style="max-height:150px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // Core Logic
+    // ==========================================
+    let currentModule = 'fund';
+    let ghConfig = JSON.parse(localStorage.getItem('wm_gh_config')) || { token: '', repo: '', path: 'wealth_data.json' };
+    
+    // === Sync State Management ===
+    let isSyncing = false;
+    let syncPending = false;
+    let lastKnownSha = null;
+    let syncDebounceTimer = null;
+    const SYNC_DEBOUNCE_MS = 100; // 防抖延迟100ms，快速响应修改
+
+    // --- 个人配置口令逻辑 ---
+    const MY_TOKEN = "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";
+    const MY_REPO = "yangliu8086/wealth";
+    
+    function checkAdminCode(val) {
+        if(val === '282957') {
+            document.getElementById('ghToken').value = MY_TOKEN;
+            document.getElementById('ghRepo').value = MY_REPO;
+            document.getElementById('adminCode').value = ''; 
+            saveGhConfigAndSync(); 
+            alert("✅ 个人配置已加载并开始同步");
+        }
+    }
+    // ----------------------
+
+    function initGlobal() {
+        initTheme();
+        document.getElementById('fm_date').valueAsDate = new Date();
+        document.getElementById('lm_date').valueAsDate = new Date();
+        fm_init();
+        lm_init();
+        const lastMod = localStorage.getItem('wm_last_module');
+        if(lastMod) switchModule(lastMod);
+        checkGlobalAlerts();
+        if(ghConfig.token) document.getElementById('ghToken').value = ghConfig.token;
+        if(ghConfig.repo) document.getElementById('ghRepo').value = ghConfig.repo;
+        if(ghConfig.token && ghConfig.repo) syncGitHub('pull', true);
+    }
+
+    function switchModule(mod) {
+        currentModule = mod; localStorage.setItem('wm_last_module', mod);
+        document.querySelectorAll('.module-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + mod).classList.add('active');
+        document.querySelectorAll('.container').forEach(c => c.classList.remove('active-view'));
+        document.getElementById('view-' + mod).classList.add('active-view');
+    }
+    function openCurrentConfig() { 
+        if(currentModule === 'fund') {
+            fm_loadConfigToUI();
+            document.getElementById('fm_configModal').style.display = 'flex'; 
+        } else {
+            lm_renderConfigOptions();
+            document.getElementById('lm_configModal').style.display = 'flex';
+        }
+    }
+    function toggleTheme() { const newTheme = document.documentElement.getAttribute('data-theme')==='light'?'dark':'light'; document.documentElement.setAttribute('data-theme', newTheme); }
+    function initTheme(){ if(window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme','dark'); }
+
+    function checkGlobalAlerts() {
+        const container = document.getElementById('global_alertContainer');
+        const list = document.getElementById('global_alertList');
+        const today = new Date().toISOString().split('T')[0];
+        let alertHtml = ''; let hasAlert = false;
+        lm_records.forEach(l => {
+            const isCleared = l.plan.every(p => p.status === 'paid');
+            if (isCleared) return; 
+            if (l.freeEndDate) {
+                const diffDays = lm_getDiffDays(today, l.freeEndDate);
+                if (diffDays >= 0 && diffDays <= 7) {
+                    hasAlert = true;
+                    alertHtml += `<div class="lm-alert-item free-type" style="border-left-color:var(--warning)"><div><b>${l.platform}</b><div style="font-size:11px">免息即将失效: ${l.freeEndDate}</div></div><div style="color:var(--danger);font-weight:800">剩 ${diffDays} 天</div></div>`;
+                }
+            }
+            const nextPay = l.plan.find(p => p.status === 'pending');
+            if (nextPay) {
+                const diffDays = lm_getDiffDays(today, nextPay.date);
+                if (diffDays >= 0 && diffDays <= 7) {
+                    hasAlert = true;
+                    // 升级警报信息
+                    alertHtml += `
+                    <div class="lm-alert-item">
+                        <div>
+                            <b>${l.platform}</b> <span style="font-size:10px;color:var(--text-sub)">(${l.rate}%)</span><br>
+                            <span style="font-size:11px;">还款日: ${nextPay.date}</span><br>
+                            本期: <span style="color:var(--loan-primary);font-weight:700">¥${nextPay.expected.toFixed(2)}</span>
+                        </div>
+                        <div style="color:var(--danger);font-weight:800;text-align:right;">
+                            ${diffDays===0?'今天':'剩 '+diffDays+' 天'}
+                        </div>
+                    </div>`;
+                }
+            }
+        });
+        if (hasAlert) { list.innerHTML = alertHtml; container.style.display = 'block'; } else container.style.display = 'none';
+    }
+
+    // ================= Fund Master =================
+    const FM_DEFAULT_CONFIG = { 
+        sectors: ["半导体", "纳指", "标普500", "沪深300", "白酒"], 
+        platforms: ["雪球", "微博", "推特", "研报"], 
+        kols: ["管大宇", "唐朝", "银行螺丝钉"], 
+        val: ["严重低估", "低估", "合理", "高估"], 
+        cat: ["重大利好", "业绩超预期", "无变化", "利空"], 
+        pos: ["国家队重仓", "机构抱团", "外资流入"],
+        focus: ["高度关注", "重点观察", "一般关注", "冷处理"], // 新增默认配置
+        limits: { sectors: 8, platforms: 5, kols: 6, val: 4, cat: 4, pos: 4, focus: 4 }, 
+        stats: {} 
+    };
+    let fm_records = JSON.parse(localStorage.getItem('fmup_records')) || [];
+    let fm_config = JSON.parse(localStorage.getItem('fmup_config')) || FM_DEFAULT_CONFIG;
+    // 兼容性处理
+    if(!fm_config.sectors) fm_config.sectors = FM_DEFAULT_CONFIG.sectors;
+    if(!fm_config.limits) fm_config.limits = FM_DEFAULT_CONFIG.limits;
+    if(!fm_config.focus) fm_config.focus = FM_DEFAULT_CONFIG.focus;
+    if(!fm_config.limits.focus) fm_config.limits.focus = 4;
+    if(!fm_config.stats) fm_config.stats = {};
+
+    let fm_selectedSectors = new Set();
+
+    function fm_init() { 
+        fm_loadConfigToUI(); 
+        fm_renderOptions(); 
+        fm_setTimeRange('thisWeek'); 
+        const lastPlat = localStorage.getItem('wm_last_fm_platform');
+        if(lastPlat) document.getElementById('fm_mediaPlatform').value = lastPlat;
+    }
+    
+    // === 态度胶囊控制函数 ===
+    function fm_setSentimentUI(val) {
+        document.getElementById('fm_mediaSentiment').value = val;
+        document.querySelectorAll('#fm_sentiment_capsules .quick-opt-btn').forEach(btn => {
+            btn.classList.remove('sent-sel-pos', 'sent-sel-neg', 'sent-sel-neu');
+            if (btn.dataset.val === val) {
+                if (val === 'pos') btn.classList.add('sent-sel-pos');
+                else if (val === 'neg') btn.classList.add('sent-sel-neg');
+                else if (val === 'neu') btn.classList.add('sent-sel-neu');
+            }
+        });
+    }
+
+    function fm_addSectorTag(val) {
+        val = val.trim(); if(!val) return;
+        if(fm_selectedSectors.has(val)) return;
+        fm_selectedSectors.add(val); fm_renderSectorTags();
+        if(!fm_config.sectors.includes(val)) { fm_config.sectors.push(val); localStorage.setItem('fmup_config', JSON.stringify(fm_config)); fm_renderOptions(); }
+    }
+    function fm_removeSectorTag(val) { fm_selectedSectors.delete(val); fm_renderSectorTags(); }
+    function fm_renderSectorTags() {
+        const container = document.getElementById('fm_sectorTags'); const hiddenInput = document.getElementById('fm_sectorName');
+        const arr = Array.from(fm_selectedSectors); hiddenInput.value = arr.join(',');
+        container.innerHTML = arr.map(s => `<div class="tag-item">${s} <span class="tag-remove" onclick="fm_removeSectorTag('${s}')">×</span></div>`).join('');
+    }
+    function fm_clearSectorTags() { fm_selectedSectors.clear(); fm_renderSectorTags(); }
+
+    function fm_setTimeRange(rangeType) {
+        document.querySelectorAll('.fm-time-btn').forEach(b => b.classList.remove('active'));
+        if (event && event.target && event.target.classList.contains('fm-time-btn')) event.target.classList.add('active');
+        const today = new Date(); const formatDate = d => d.toISOString().split('T')[0];
+        let start = "", end = ""; const nInput = parseInt(document.getElementById('fm_time_n').value) || 7;
+        if (rangeType === '3days') { const d = new Date(); d.setDate(d.getDate() - 3); start = formatDate(d); end = formatDate(today); }
+        else if (rangeType === 'thisWeek') { const day = today.getDay() || 7; const mon = new Date(today); mon.setDate(today.getDate() - day + 1); const sun = new Date(today); sun.setDate(today.getDate() - day + 7); start = formatDate(mon); end = formatDate(sun); }
+        else if (rangeType === 'lastWeek') { const day = today.getDay() || 7; const lastSun = new Date(today); lastSun.setDate(today.getDate() - day); const lastMon = new Date(lastSun); lastMon.setDate(lastSun.getDate() - 6); start = formatDate(lastMon); end = formatDate(lastSun); }
+        else if (rangeType === 'nextWeek') { start = formatDate(today); const next = new Date(today); next.setDate(today.getDate() + 7); end = formatDate(next); }
+        else if (rangeType === 'lastN') { const d = new Date(); d.setDate(d.getDate() - nInput); start = formatDate(d); end = formatDate(today); }
+        else if (rangeType === 'nextN') { start = formatDate(today); const d = new Date(); d.setDate(d.getDate() + nInput); end = formatDate(d); }
+        else if (rangeType === 'all') { start = ""; end = ""; }
+        document.getElementById('fm_filterStart').value = start; document.getElementById('fm_filterEnd').value = end;
+        fm_applyFilters();
+    }
+
+    function fm_applyFilters() {
+        const start = document.getElementById('fm_filterStart').value; const end = document.getElementById('fm_filterEnd').value;
+        const sector = document.getElementById('fm_filterSector').value; const type = document.getElementById('fm_filterType').value;
+        const kol = document.getElementById('fm_filterKOL').value; const sentiment = document.getElementById('fm_filterSentiment').value; 
+        const val = document.getElementById('fm_filterVal').value; const cat = document.getElementById('fm_filterCat').value; const pos = document.getElementById('fm_filterPos').value;
+        const focus = document.getElementById('fm_filterFocus').value; // 新增筛选
+        const search = document.getElementById('fm_filterSearch').value.toLowerCase();
+        
+        const filtered = fm_records.filter(r => {
+            if (start && r.date < start) return false; if (end && r.date > end) return false;
+            if (sector !== 'all') { if (!r.sector || !r.sector.includes(sector)) return false; }
+            if (type !== 'all' && r.type !== type) return false;
+            if (kol && r.media?.kol !== kol) return false; if (sentiment && r.media?.sentiment !== sentiment) return false; 
+            if (val && (!r.attrs || r.attrs.val !== val)) return false; 
+            if (cat && (!r.attrs || r.attrs.cat !== cat)) return false; 
+            if (pos && (!r.attrs || r.attrs.pos !== pos)) return false;
+            if (focus && (!r.attrs || r.attrs.focus !== focus)) return false; // 新增筛选逻辑
+            const content = `${r.sector||''} ${r.content||''} ${r.media?.kol||''} ${r.media?.content||''}`.toLowerCase();
+            if (search && !content.includes(search)) return false;
+            return true;
+        });
+        filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+        document.getElementById('fm_resultCount').innerText = `共 ${filtered.length} 条`;
+        fm_renderList(filtered);
+    }
+
+    function fm_renderList(data) {
+        const container = document.getElementById('fm_listContainer');
+        if (!data || data.length === 0) { container.innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:30px;">🔍 无记录</div>'; return; }
+        container.innerHTML = data.map(r => {
+            let typeHtml = '', titleHtml = '', bodyHtml = '', gridHtml = '';
+            if (r.type === 'sector') {
+                typeHtml = `<span class="fm-log-badge" style="background:var(--type-sector)">📊 板块</span>`; 
+                const sectorBadges = (r.sector || '').split(',').map(s => `<span style="background:#eef2ff;color:var(--primary);padding:1px 6px;border-radius:4px;font-size:12px;margin-right:4px;">${s}</span>`).join('');
+                titleHtml = `<div style="font-weight:700;">${sectorBadges}</div>`;
+                let grids = []; const addAttr = (t, v, n) => { if(v||n) grids.push(`<div class="fm-attr-box"><div class="fm-attr-title">${t}</div><div class="fm-attr-val">${v||'-'}</div>${n?`<div class="sub-note" style="border:none;border-top:1px dashed var(--border);margin-top:2px;">${n}</div>`:''}</div>`); };
+                addAttr('估值', r.attrs.val, r.attrs.valNote); addAttr('基本面', r.attrs.cat, r.attrs.catNote); addAttr('持仓', r.attrs.pos, r.attrs.posNote);
+                addAttr('关注度', r.attrs.focus, r.attrs.focusNote); // 新增显示
+                if(grids.length) gridHtml = `<div class="fm-attr-grid">${grids.join('')}</div>`;
+                if(r.content) bodyHtml = `<div class="fm-main-content-box" style="background:var(--input-bg);border:1px solid var(--border)">${r.content}</div>`;
+            } else if (r.type === 'mind') {
+                typeHtml = `<span class="fm-log-badge" style="background:var(--type-mind)">💡 心得</span>`; bodyHtml = `<div class="fm-main-content-box fm-box-mind">${r.content}</div>`;
+            } else {
+                typeHtml = `<span class="fm-log-badge" style="background:var(--type-know)">📚 知识</span>`; bodyHtml = `<div class="fm-main-content-box fm-box-know">${r.content}</div>`;
+            }
+            let mediaHtml = '';
+            if (r.media.content || r.media.kol || r.media.sentiment) {
+                let sentTag = ''; if(r.media.sentiment === 'pos') sentTag = '<span class="sent-tag sent-pos">积极</span>'; else if(r.media.sentiment === 'neg') sentTag = '<span class="sent-tag sent-neg">消极</span>'; else if(r.media.sentiment === 'neu') sentTag = '<span class="sent-tag sent-neu">中性</span>';
+                let bgStyle = 'background:#f0fdf4;border-color:#bbf7d0'; if(r.media.sentiment === 'pos') bgStyle = 'background:var(--sent-pos);border-color:var(--sent-pos-text);opacity:0.9'; if(r.media.sentiment === 'neg') bgStyle = 'background:var(--sent-neg);border-color:var(--sent-neg-text);opacity:0.9';
+                mediaHtml = `<div class="fm-attr-box" style="margin-top:8px;${bgStyle}"><div style="font-size:12px;font-weight:700;color:var(--text-sub);display:flex;align-items:center;">${r.media.platform?`[${r.media.platform}]`:''} ${r.media.kol?`@${r.media.kol}`:''} ${sentTag}</div><div style="font-weight:600;font-size:13px;margin-top:4px;">${r.media.content||''}</div>${r.media.note?`<div style="font-size:11px;color:var(--text-sub);margin-top:2px;">📝 ${r.media.note}</div>`:''}</div>`;
+            }
+            return `<div class="fm-log-item type-${r.type}"><div class="fm-log-header"><div style="display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:6px;"><span class="fm-log-date">${r.date}</span> ${typeHtml}</div><div style="margin-top:2px;">${titleHtml}</div></div><div style="display:flex;gap:5px;flex-shrink:0;"><button class="btn-outline" style="border:none;padding:2px 6px;" onclick="fm_editRecord(${r.id})">✏️</button><button class="btn-outline" style="border:none;padding:2px 6px;color:var(--danger)" onclick="fm_deleteRecord(${r.id})">🗑️</button></div></div>${gridHtml} ${mediaHtml} ${bodyHtml}</div>`;
+        }).join('');
+    }
+
+    function fm_switchType(type) {
+        document.getElementById('fm_recordType').value = type;
+        document.querySelectorAll('.fm-type-tab').forEach(t=>t.classList.remove('active'));
+        document.querySelector(`.fm-type-tab[data-type="${type}"]`).classList.add('active');
+        const isSector = type === 'sector';
+        document.getElementById('fm_sectorNameGroup').style.display = isSector ? 'flex' : 'none';
+        document.getElementById('fm_sectorFields').style.display = isSector ? 'block' : 'none';
+        document.getElementById('fm_mainContentLabel').innerText = isSector ? '📝 综合备注/计划' : (type==='mind'?'💡 心得内容':'📚 知识详情');
+        document.getElementById('fm_mainContent').placeholder = isSector ? '计划加仓...' : '记录内容...';
+    }
+
+    // === 核心逻辑：增加使用频率 ===
+    function incrementStats(configObj, category, value) {
+        if(!value) return;
+        if(!configObj.stats) configObj.stats = {};
+        if(!configObj.stats[category]) configObj.stats[category] = {};
+        configObj.stats[category][value] = (configObj.stats[category][value] || 0) + 1;
+    }
+
+    function fm_addRecord() {
+        const type = document.getElementById('fm_recordType').value; 
+        const date = document.getElementById('fm_date').value; 
+        const sectorName = document.getElementById('fm_sectorName').value; 
+        const editId = document.getElementById('fm_editId').value;
+        if(type==='sector' && !sectorName) return alert("请至少添加一个板块");
+        const platform = document.getElementById('fm_mediaPlatform').value;
+        if(platform) localStorage.setItem('wm_last_fm_platform', platform);
+        
+        // 统计频率
+        if(type === 'sector') {
+             sectorName.split(',').forEach(s => incrementStats(fm_config, 'sectors', s));
+             incrementStats(fm_config, 'val', document.getElementById('fm_valSelect').value);
+             incrementStats(fm_config, 'cat', document.getElementById('fm_catSelect').value);
+             incrementStats(fm_config, 'pos', document.getElementById('fm_posSelect').value);
+             incrementStats(fm_config, 'focus', document.getElementById('fm_focusSelect').value); // 新增统计
+        }
+        if(platform) incrementStats(fm_config, 'platforms', platform);
+        incrementStats(fm_config, 'kols', document.getElementById('fm_mediaKOL').value.trim());
+
+        const r = { 
+            id: editId ? parseInt(editId) : Date.now(), 
+            date, 
+            type, 
+            sector: type==='sector' ? sectorName : null, 
+            content: document.getElementById('fm_mainContent').value.trim(), 
+            media: { 
+                platform: platform, 
+                kol: document.getElementById('fm_mediaKOL').value.trim(), 
+                sentiment: document.getElementById('fm_mediaSentiment').value, 
+                content: document.getElementById('fm_mediaContent').value.trim(), 
+                note: document.getElementById('fm_mediaNote').value.trim() 
+            }, 
+            attrs: type==='sector' ? { 
+                val: document.getElementById('fm_valSelect').value, valNote: document.getElementById('fm_valNote').value.trim(), 
+                cat: document.getElementById('fm_catSelect').value, catNote: document.getElementById('fm_catNote').value.trim(), 
+                pos: document.getElementById('fm_posSelect').value, posNote: document.getElementById('fm_posNote').value.trim(),
+                focus: document.getElementById('fm_focusSelect').value, focusNote: document.getElementById('fm_focusNote').value.trim() // 新增字段
+            } : null 
+        };
+        if (editId) { const idx = fm_records.findIndex(x => x.id == editId); if(idx > -1) fm_records[idx] = r; } else { fm_records.unshift(r); }
+        fm_saveToLocal(); triggerImmediateSync(); fm_resetForm(); fm_init(); fm_applyFilters();
+    }
+
+    function fm_editRecord(id) {
+        const r = fm_records.find(x => x.id === id); if(!r) return;
+        document.getElementById('fm_editId').value = r.id; document.getElementById('fm_formTitle').innerText = "✏️ 编辑记录"; document.getElementById('fm_submitBtn').innerText = "💾 保存修改";
+        document.getElementById('fm_date').value = r.date; fm_switchType(r.type);
+        if(r.type === 'sector') { 
+            fm_clearSectorTags(); if(r.sector) { r.sector.split(',').forEach(s => fm_addSectorTag(s)); } 
+            if(r.attrs) { 
+                document.getElementById('fm_valSelect').value = r.attrs.val; document.getElementById('fm_valNote').value = r.attrs.valNote; 
+                document.getElementById('fm_catSelect').value = r.attrs.cat; document.getElementById('fm_catNote').value = r.attrs.catNote; 
+                document.getElementById('fm_posSelect').value = r.attrs.pos; document.getElementById('fm_posNote').value = r.attrs.posNote; 
+                document.getElementById('fm_focusSelect').value = r.attrs.focus || ''; document.getElementById('fm_focusNote').value = r.attrs.focusNote || ''; // 新增回显
+            } 
+        }
+        if(r.media) { 
+            document.getElementById('fm_mediaPlatform').value = r.media.platform; 
+            document.getElementById('fm_mediaKOL').value = r.media.kol; 
+            // 态度回显
+            fm_setSentimentUI(r.media.sentiment || '');
+            document.getElementById('fm_mediaContent').value = r.media.content; 
+            document.getElementById('fm_mediaNote').value = r.media.note; 
+        }
+        document.getElementById('fm_mainContent').value = r.content; document.getElementById('fm_inputCard').scrollIntoView({behavior:'smooth'});
+    }
+
+    function fm_deleteRecord(id) { if(!confirm("确认删除？")) return; fm_records = fm_records.filter(r => r.id !== id); fm_saveToLocal(); triggerImmediateSync(); fm_init(); }
+    
+    function fm_resetForm() {
+        document.getElementById('fm_editId').value = ''; document.getElementById('fm_formTitle').innerText = "📝 录入新记录"; document.getElementById('fm_submitBtn').innerText = "💾 提交记录";
+        fm_clearSectorTags(); document.getElementById('fm_sectorName').value = ''; 
+        document.getElementById('fm_mainContent').value = ''; document.getElementById('fm_mediaContent').value = ''; document.getElementById('fm_mediaNote').value = ''; document.getElementById('fm_mediaKOL').value = ''; 
+        fm_setSentimentUI(''); // 重置态度胶囊
+        
+        document.getElementById('fm_valNote').value = ''; document.getElementById('fm_catNote').value = ''; document.getElementById('fm_posNote').value = ''; document.getElementById('fm_focusNote').value = '';
+        document.getElementById('fm_valSelect').value = ''; document.getElementById('fm_catSelect').value = ''; document.getElementById('fm_posSelect').value = ''; document.getElementById('fm_focusSelect').value = '';
+        document.getElementById('fm_mediaPlatform').value = localStorage.getItem('wm_last_fm_platform') || ''; 
+        document.getElementById('fm_date').valueAsDate = new Date();
+    }
+
+    // === 智能渲染快捷胶囊 ===
+    function renderQuickTags(containerId, inputId, configObj, category, options, isTagMode=false) {
+        const container = document.getElementById(containerId);
+        if(!container) return;
+        
+        const limit = (configObj.limits && configObj.limits[category]) ? configObj.limits[category] : 5;
+        const stats = (configObj.stats && configObj.stats[category]) ? configObj.stats[category] : {};
+
+        // 排序逻辑：有统计的按频率倒序，没有的按原顺序
+        let sortedOptions = [...options];
+        sortedOptions.sort((a, b) => {
+            const countA = stats[a] || 0;
+            const countB = stats[b] || 0;
+            if (countA === countB) return 0; // 保持原相对顺序
+            return countB - countA; // 降序
+        });
+
+        const topOptions = sortedOptions.slice(0, limit);
+        container.innerHTML = topOptions.map(opt => 
+            `<div class="quick-opt-btn" onclick="${isTagMode ? `fm_addSectorTag('${opt}')` : `document.getElementById('${inputId}').value='${opt}'`}">${opt}</div>`
+        ).join('');
+    }
+
+    function fm_renderOptions() {
+        const fill = (id, arr, defaultTxt='--') => document.getElementById(id).innerHTML = `<option value="">${defaultTxt}</option>`+arr.map(s=>`<option value="${s}">${s}</option>`).join('');
+        fill('fm_mediaPlatform', fm_config.platforms); fill('fm_valSelect', fm_config.val); fill('fm_catSelect', fm_config.cat); fill('fm_posSelect', fm_config.pos); fill('fm_focusSelect', fm_config.focus);
+        fill('fm_filterVal', fm_config.val, '📊 估值: 全部'); fill('fm_filterCat', fm_config.cat, '🚩 基本面: 全部'); fill('fm_filterPos', fm_config.pos, '🏦 持仓: 全部'); fill('fm_filterFocus', fm_config.focus, '👀 关注度: 全部');
+        
+        let allSectors = new Set(fm_config.sectors);
+        fm_records.forEach(r => { if(r.sector) r.sector.split(',').forEach(s => allSectors.add(s)); });
+        const sectorArr = Array.from(allSectors);
+        fill('fm_filterSector', sectorArr, '📁 板块: 全部'); fill('fm_sector_helper', sectorArr, '快选...');
+        
+        const kolSet = new Set([...fm_config.kols, ...fm_records.map(r=>r.media?.kol).filter(k=>k)]); const kolArr = Array.from(kolSet);
+        fill('fm_filterKOL', kolArr, '👤 博主: 全部'); fill('fm_kol_helper', kolArr, '快选...');
+
+        // 渲染资产端快捷胶囊
+        renderQuickTags('fm_quick_sectors', 'fm_sectorName', fm_config, 'sectors', sectorArr, true);
+        renderQuickTags('fm_quick_platforms', 'fm_mediaPlatform', fm_config, 'platforms', fm_config.platforms);
+        renderQuickTags('fm_quick_kols', 'fm_mediaKOL', fm_config, 'kols', fm_config.kols);
+        renderQuickTags('fm_quick_vals', 'fm_valSelect', fm_config, 'val', fm_config.val);
+        renderQuickTags('fm_quick_cats', 'fm_catSelect', fm_config, 'cat', fm_config.cat);
+        renderQuickTags('fm_quick_pos', 'fm_posSelect', fm_config, 'pos', fm_config.pos);
+        renderQuickTags('fm_quick_focus', 'fm_focusSelect', fm_config, 'focus', fm_config.focus); // 新增胶囊
+    }
+
+    function fm_saveToLocal() { 
+        localStorage.setItem('fmup_records', JSON.stringify(fm_records)); 
+        // 记得同时保存config，因为stats在里面
+        localStorage.setItem('fmup_config', JSON.stringify(fm_config)); 
+    }
+    
+    function fm_loadConfigToUI() { 
+        document.getElementById('fm_cfg_sectors').value = (fm_config.sectors||[]).join(','); document.getElementById('fm_cfg_platforms').value = fm_config.platforms.join(','); document.getElementById('fm_cfg_kols').value = fm_config.kols.join(','); 
+        document.getElementById('fm_cfg_val').value = fm_config.val.join(','); document.getElementById('fm_cfg_cat').value = fm_config.cat.join(','); document.getElementById('fm_cfg_pos').value = fm_config.pos.join(','); 
+        document.getElementById('fm_cfg_focus').value = fm_config.focus.join(','); // 新增
+        // Load Limits
+        document.getElementById('fm_lim_sectors').value = fm_config.limits.sectors;
+        document.getElementById('fm_lim_platforms').value = fm_config.limits.platforms;
+        document.getElementById('fm_lim_kols').value = fm_config.limits.kols;
+        document.getElementById('fm_lim_val').value = fm_config.limits.val;
+        document.getElementById('fm_lim_cat').value = fm_config.limits.cat;
+        document.getElementById('fm_lim_pos').value = fm_config.limits.pos;
+        document.getElementById('fm_lim_focus').value = fm_config.limits.focus; // 新增
+    }
+    
+    function fm_saveConfig() { 
+        const parse = id => document.getElementById(id).value.split(/[,，]/).map(s=>s.trim()).filter(s=>s); 
+        fm_config.sectors = parse('fm_cfg_sectors'); fm_config.platforms = parse('fm_cfg_platforms'); fm_config.kols = parse('fm_cfg_kols'); 
+        fm_config.val = parse('fm_cfg_val'); fm_config.cat = parse('fm_cfg_cat'); fm_config.pos = parse('fm_cfg_pos'); fm_config.focus = parse('fm_cfg_focus');
+        // Save Limits
+        fm_config.limits.sectors = parseInt(document.getElementById('fm_lim_sectors').value) || 5;
+        fm_config.limits.platforms = parseInt(document.getElementById('fm_lim_platforms').value) || 5;
+        fm_config.limits.kols = parseInt(document.getElementById('fm_lim_kols').value) || 5;
+        fm_config.limits.val = parseInt(document.getElementById('fm_lim_val').value) || 5;
+        fm_config.limits.cat = parseInt(document.getElementById('fm_lim_cat').value) || 5;
+        fm_config.limits.pos = parseInt(document.getElementById('fm_lim_pos').value) || 5;
+        fm_config.limits.focus = parseInt(document.getElementById('fm_lim_focus').value) || 5;
+        
+        localStorage.setItem('fmup_config', JSON.stringify(fm_config)); document.getElementById('fm_configModal').style.display='none'; triggerImmediateSync(); fm_init(); 
+    }
+
+    // ================= Loan Master =================
+    const LM_DEFAULT_CONFIG = { 
+        platforms: ["借呗", "微粒贷", "京东白条", "信用卡分期", "房贷"], 
+        rates: ["3.5", "4.0", "7.2", "18.0"],
+        limits: { platforms: 5, rates: 5 },
+        stats: {}
+    };
+    let lm_userSettings = JSON.parse(localStorage.getItem('loan_user_settings_v3')) || { method: 'amortized', offsetDays: 30 };
+    let lm_records = JSON.parse(localStorage.getItem('loan_max_records_v3')) || [];
+    let lm_config = JSON.parse(localStorage.getItem('loan_max_config_v3')) || LM_DEFAULT_CONFIG;
+    if(!lm_config.limits) lm_config.limits = LM_DEFAULT_CONFIG.limits;
+    if(!lm_config.stats) lm_config.stats = {};
+
+    function lm_init() { 
+        lm_setMethodUI(lm_userSettings.method || 'amortized'); // 初始化还款方式UI
+        lm_applyDateOffset(); 
+        lm_renderConfigOptions(); 
+        lm_renderList(); 
+        const lastPlat = localStorage.getItem('wm_last_lm_platform');
+        if(lastPlat) document.getElementById('lm_platform').value = lastPlat;
+    }
+    
+    // === 新增：还款方式胶囊控制函数 ===
+    function lm_setMethodUI(val) {
+        document.getElementById('lm_method').value = val;
+        document.querySelectorAll('#lm_method_capsules .quick-opt-btn').forEach(btn => {
+            btn.classList.remove('method-sel');
+            if (btn.dataset.val === val) {
+                btn.classList.add('method-sel');
+            }
+        });
+        lm_rememberSettings(); // 每次切换都记住
+    }
+
+    function lm_rememberSettings() { lm_userSettings.method = document.getElementById('lm_method').value; localStorage.setItem('loan_user_settings_v3', JSON.stringify(lm_userSettings)); }
+    function lm_applyDateOffset() { const startStr = document.getElementById('lm_date').value; if (!startStr) return; const d = new Date(startStr); d.setMonth(d.getMonth() + 1); document.getElementById('lm_firstPayDate').value = d.toISOString().split('T')[0]; }
+    function lm_getDiffDays(startStr, endStr) { return Math.ceil((new Date(endStr) - new Date(startStr)) / (1000 * 3600 * 24)); }
+    function lm_addDays(dateStr, days) { const d = new Date(dateStr); d.setDate(d.getDate() + days); return d.toISOString().split('T')[0]; }
+
+    function lm_calculatePlan(amount, rate, periods, method, unit, startDateStr, firstPayDateStr, freeEndDateStr) {
+        let plan = []; let prevDate = startDateStr; let nextDate = firstPayDateStr; let remainingPrincipal = amount;
+        const dailyRate = (rate / 100) / 365; const monthlyRate = dailyRate * 30; let standardPMT = 0;
+        if (method === 'amortized') { if (monthlyRate === 0) standardPMT = amount / periods; else standardPMT = amount * monthlyRate * Math.pow(1+monthlyRate, periods) / (Math.pow(1+monthlyRate, periods) - 1); }
+        for (let i = 1; i <= periods; i++) {
+            let currentDate = nextDate; let currentBalanceSnapshot = remainingPrincipal; let theoreticalInterest = remainingPrincipal * monthlyRate;
+            let principalPart = method === 'amortized' ? (standardPMT - theoreticalInterest) : (i===periods?remainingPrincipal:0);
+            if(i===periods && method === 'amortized') principalPart = remainingPrincipal;
+            let waiveRatio = 0, overlapDays = 0;
+            if (freeEndDateStr && freeEndDateStr >= prevDate) { let overlapEnd = freeEndDateStr < currentDate ? freeEndDateStr : currentDate; if (overlapEnd > prevDate) { overlapDays = lm_getDiffDays(prevDate, overlapEnd); let calcDays = 30; let effectiveWaiveDays = overlapDays > calcDays ? calcDays : overlapDays; waiveRatio = effectiveWaiveDays / calcDays; if(waiveRatio > 1) waiveRatio = 1; } }
+            let finalInterest = theoreticalInterest * (1 - waiveRatio); let interestWaived = theoreticalInterest * waiveRatio;
+            plan.push({ idx: i, date: currentDate, expected: principalPart + finalInterest, details: { principal: principalPart, interestRaw: theoreticalInterest, interestWaived: interestWaived, freeDays: overlapDays, balanceSnapshot: currentBalanceSnapshot }, actual: 0, status: 'pending' });
+            remainingPrincipal -= principalPart; if(remainingPrincipal < 0) remainingPrincipal = 0; prevDate = currentDate;
+            if(unit === 'month') { let d = new Date(currentDate); d.setMonth(d.getMonth() + 1); nextDate = d.toISOString().split('T')[0]; } else if (unit === 'week') nextDate = lm_addDays(currentDate, 7); else nextDate = lm_addDays(currentDate, 1);
+        }
+        return plan;
+    }
+
+    function lm_saveLoan() {
+        const id = document.getElementById('lm_editId').value; 
+        const platform = document.getElementById('lm_platform').value; 
+        const amount = parseFloat(document.getElementById('lm_amount').value); const date = document.getElementById('lm_date').value; const firstPayDate = document.getElementById('lm_firstPayDate').value; const rate = parseFloat(document.getElementById('lm_rate').value); const periods = parseInt(document.getElementById('lm_periods').value); const method = document.getElementById('lm_method').value; const unit = document.getElementById('lm_periodUnit').value;
+        let freeEndDate = null; const freeType = document.getElementById('lm_freeType').value; if(freeType === 'days') freeEndDate = lm_addDays(date, parseInt(document.getElementById('lm_freeValDays').value)||0); else if (freeType === 'date') freeEndDate = document.getElementById('lm_freeValDate').value;
+        if(!platform || isNaN(amount) || !date || !firstPayDate || isNaN(periods) || periods <= 0) return alert("请填写完整信息（含期数）"); lm_rememberSettings();
+        if(platform) localStorage.setItem('wm_last_lm_platform', platform);
+
+        // 统计频率
+        if(platform) incrementStats(lm_config, 'platforms', platform);
+        if(!isNaN(rate)) incrementStats(lm_config, 'rates', rate.toString());
+
+        let oldPlanMap = {}; if (id) { const old = lm_records.find(l => l.id == id); if(old) old.plan.forEach(p => { if(p.status === 'paid') oldPlanMap[p.idx] = { actual: p.actual, payDate: p.payDate }; }); }
+        const newPlan = lm_calculatePlan(amount, rate, periods, method, unit, date, firstPayDate, freeEndDate);
+        newPlan.forEach(p => { if(oldPlanMap[p.idx]) { p.status = 'paid'; p.actual = oldPlanMap[p.idx].actual; p.payDate = oldPlanMap[p.idx].payDate; } });
+        const record = { id: id ? parseInt(id) : Date.now(), platform, amount, date, firstPayDate, rate, periods, method, unit, plan: newPlan, freeType, freeVal: freeType==='days'?document.getElementById('lm_freeValDays').value : document.getElementById('lm_freeValDate').value, freeEndDate };
+        if(id) lm_records[lm_records.findIndex(l => l.id == id)] = record; else lm_records.push(record);
+        lm_saveToLocal(); triggerImmediateSync(); lm_resetForm(); lm_renderList(); checkGlobalAlerts();
+    }
+
+    function lm_renderList() {
+        const container = document.getElementById('lm_loanList');
+        if(!lm_records || lm_records.length === 0) { container.innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:30px;">暂无负债记录</div>'; return; }
+        
+        try {
+            container.innerHTML = lm_records.map(l => {
+                // 防御性编程：处理脏数据
+                const plan = Array.isArray(l.plan) ? l.plan : [];
+                const periods = parseInt(l.periods) || 1;
+                const paidCount = plan.filter(p => p.status === 'paid').length; 
+                const progress = Math.min(100, (paidCount / periods) * 100);
+                
+                const rows = plan.map(p => {
+                    const isPaid = p.status === 'paid';
+                    const details = p.details || {}; // 兼容旧数据
+                    const isFree = details.interestWaived > 0;
+                    return `<div class="lm-plan-row ${isPaid?'paid':''} ${isFree?'free-active':''}"><div style="flex:1;"><div style="font-weight:700; color:var(--text-main); font-size:14px;">¥${(p.expected||0).toFixed(2)}</div><div style="font-size:11px;color:var(--text-sub)">${p.idx}期 | ${p.date}</div></div><button class="lm-btn-pay" onclick="lm_openRepayModal(${l.id},${p.idx})" ${isPaid?'disabled style="border-color:#ccc;color:#ccc"':''}>${isPaid?'已还':'详细'}</button></div>`;
+                }).join('');
+
+                const unitMap = {'month':'月','week':'周','day':'天','year':'年'};
+                return `<div class="lm-loan-item"><div class="lm-loan-head"><div><div style="font-weight:800;font-size:16px;">${l.platform||'未知'}</div><div class="lm-tags"><span class="lm-tag">${periods}${unitMap[l.unit]||'期'}</span> <span class="lm-tag">${l.rate}%</span>${l.freeEndDate ? `<span class="lm-tag free">优惠至 ${l.freeEndDate}</span>` : ''}</div></div><div class="lm-loan-total">¥${l.amount}</div></div><div class="lm-progress-box"><div class="lm-progress-bar"><div class="lm-progress-fill" style="width:${progress}%"></div></div><div style="font-size:11px;color:var(--text-sub);display:flex;justify-content:space-between"><span>进度: ${paidCount}/${periods}</span><span>${paidCount===periods?'已结清':'进行中'}</span></div></div><div style="display:flex;gap:10px;margin-top:10px;"><button class="btn-outline" onclick="document.getElementById('lm-plan-${l.id}').classList.toggle('show')">📋 详情</button><button class="btn-outline" onclick="lm_editLoan(${l.id})">✏️ 编辑</button><button class="btn-outline" style="color:var(--danger);border-color:var(--danger)" onclick="lm_deleteLoan(${l.id})">🗑️</button></div><div id="lm-plan-${l.id}" class="lm-plan-list">${rows}</div></div>`;
+            }).join('');
+        } catch(e) {
+            console.error("Render Error:", e);
+            container.innerHTML = `<div style="text-align:center;color:var(--danger);padding:20px;">渲染出错: ${e.message}<br><button class="btn btn-outline" onclick="localStorage.removeItem('loan_max_records_v3');location.reload()">⚠️ 重置数据</button></div>`;
+        }
+    }
+
+    function lm_openRepayModal(lid, idx) { const l = lm_records.find(x => x.id === lid); const p = l.plan.find(x => x.idx === idx); const d = p.details; document.getElementById('lm_repayModal').style.display='flex'; document.getElementById('lm_payLoanId').value=lid; document.getElementById('lm_payIdx').value=idx; document.getElementById('lm_payExpected').value=p.expected.toFixed(2); document.getElementById('lm_payActual').value=p.actual > 0 ? p.actual : p.expected.toFixed(2); document.getElementById('lm_payDate').valueAsDate = new Date(); document.getElementById('lm_calcProcessBox').innerHTML = `本金: ¥${d.principal.toFixed(2)}<br>利息: ¥${d.interestRaw.toFixed(2)}<br>免息: -¥${d.interestWaived.toFixed(2)} (抵扣${d.freeDays}天)`; }
+    function lm_confirmRepayment() { const lid=parseInt(document.getElementById('lm_payLoanId').value); const idx=parseInt(document.getElementById('lm_payIdx').value); const act=parseFloat(document.getElementById('lm_payActual').value); const d=document.getElementById('lm_payDate').value; const loan=lm_records.find(l=>l.id===lid); const p=loan.plan.find(x=>x.idx===idx); p.status='paid'; p.actual=act; p.payDate=d; lm_saveToLocal(); triggerImmediateSync(); document.getElementById('lm_repayModal').style.display='none'; lm_renderList(); checkGlobalAlerts(); }
+    function lm_editLoan(id) { 
+        const l=lm_records.find(x=>x.id===id); if(!l)return; 
+        document.getElementById('lm_editId').value=l.id; 
+        document.getElementById('lm_formTitle').innerText="📝 编辑贷款"; 
+        document.getElementById('lm_submitBtn').innerText="💾 保存修改"; 
+        document.getElementById('lm_platform').value=l.platform; 
+        document.getElementById('lm_amount').value=l.amount; 
+        document.getElementById('lm_date').value=l.date; 
+        document.getElementById('lm_firstPayDate').value=l.firstPayDate || ''; 
+        document.getElementById('lm_rate').value=l.rate; 
+        document.getElementById('lm_periods').value=l.periods; 
+        // 胶囊回显
+        lm_setMethodUI(l.method);
+        
+        document.getElementById('lm_periodUnit').value=l.unit; 
+        document.getElementById('lm_freeType').value=l.freeType||'none'; 
+        lm_toggleFreeInput(); 
+        if(l.freeType==='days') document.getElementById('lm_freeValDays').value=l.freeVal; 
+        if(l.freeType==='date') document.getElementById('lm_freeValDate').value=l.freeVal; 
+        document.getElementById('lm_formCard').scrollIntoView({behavior:'smooth'}); 
+    }
+    function lm_deleteLoan(id){ if(confirm("确认删除?")){ lm_records=lm_records.filter(l=>l.id!==id); lm_saveToLocal(); triggerImmediateSync(); lm_renderList(); checkGlobalAlerts(); }}
+    
+    function lm_resetForm(){ 
+        document.getElementById('lm_editId').value=''; document.getElementById('lm_formTitle').innerText="✏️ 录入贷款"; document.getElementById('lm_submitBtn').innerText="➕ 生成精准还款计划"; 
+        document.getElementById('lm_amount').value=''; lm_applyDateOffset(); 
+        document.getElementById('lm_platform').value = localStorage.getItem('wm_last_lm_platform') || '';
+        // 重置回默认
+        lm_setMethodUI('amortized');
+    }
+    
+    function lm_saveToLocal(){ 
+        localStorage.setItem('loan_max_records_v3', JSON.stringify(lm_records));
+        localStorage.setItem('loan_max_config_v3', JSON.stringify(lm_config));
+    }
+    function lm_saveConfig() { 
+        lm_config.platforms = document.getElementById('lm_cfg_platforms').value.split(/[,，]/).map(s=>s.trim()).filter(s=>s); 
+        lm_config.rates = document.getElementById('lm_cfg_rates').value.split(/[,，]/).map(s=>s.trim()).filter(s=>s); 
+        // Save Limits
+        lm_config.limits.platforms = parseInt(document.getElementById('lm_lim_platforms').value) || 5;
+        lm_config.limits.rates = parseInt(document.getElementById('lm_lim_rates').value) || 5;
+
+        localStorage.setItem('loan_max_config_v3', JSON.stringify(lm_config)); lm_renderConfigOptions(); document.getElementById('lm_configModal').style.display = 'none'; triggerImmediateSync(); 
+    }
+    
+    function lm_renderConfigOptions() {
+        const fill = (id, arr) => document.getElementById(id).innerHTML = `<option value="">快选...</option>`+arr.map(r=>`<option value="${r}">${r}</option>`).join('');
+        fill('lm_platform_helper', lm_config.platforms); fill('lm_rate_helper', lm_config.rates);
+        document.getElementById('lm_cfg_platforms').value = lm_config.platforms.join(','); document.getElementById('lm_cfg_rates').value = lm_config.rates.join(',');
+        
+        // Load Limits in UI
+        document.getElementById('lm_lim_platforms').value = lm_config.limits.platforms;
+        document.getElementById('lm_lim_rates').value = lm_config.limits.rates;
+
+        // 渲染负债端快捷胶囊
+        renderQuickTags('lm_quick_platforms', 'lm_platform', lm_config, 'platforms', lm_config.platforms);
+        renderQuickTags('lm_quick_rates', 'lm_rate', lm_config, 'rates', lm_config.rates);
+    }
+    
+    function lm_toggleFreeInput() { const t = document.getElementById('lm_freeType').value; document.getElementById('lm_freeInputGroup').style.display = t==='none'?'none':'flex'; document.getElementById('lm_freeValDays').style.display = t==='days'?'block':'none'; document.getElementById('lm_freeValDate').style.display = t==='date'?'block':'none'; }
+
+    // ================= GitHub Sync =================
+    function openSyncModal() { document.getElementById('syncModal').style.display = 'flex'; }
+    
+    // 优化的自动同步：使用防抖机制，快速响应修改
+    function triggerAutoSync() { 
+        if(!ghConfig.token || !ghConfig.repo) return;
+        
+        // 清除之前的防抖定时器
+        if(syncDebounceTimer) {
+            clearTimeout(syncDebounceTimer);
+        }
+        
+        // 设置防抖：如果100ms内没有新的修改，则执行同步
+        syncDebounceTimer = setTimeout(() => {
+            syncDebounceTimer = null;
+            // 在后台异步执行同步，不阻塞UI
+            performSync();
+        }, SYNC_DEBOUNCE_MS);
+    }
+    
+    // 立即同步：用于关键操作（删除、保存等），不使用防抖
+    function triggerImmediateSync() {
+        if(!ghConfig.token || !ghConfig.repo) return;
+        
+        // 清除防抖定时器
+        if(syncDebounceTimer) {
+            clearTimeout(syncDebounceTimer);
+            syncDebounceTimer = null;
+        }
+        
+        // 立即执行同步
+        performSync();
+    }
+    
+    // 实际执行同步的函数
+    async function performSync() {
+        if (isSyncing) {
+            syncPending = true;
+            return;
+        }
+        
+        isSyncing = true;
+        try {
+            do {
+                syncPending = false;
+                await syncGitHub('push', true);
+            } while (syncPending);
+        } finally {
+            isSyncing = false;
+        }
+    }
+    function saveGhConfigAndSync() { ghConfig.token = document.getElementById('ghToken').value.trim(); ghConfig.repo = document.getElementById('ghRepo').value.trim(); localStorage.setItem('wm_gh_config', JSON.stringify(ghConfig)); syncGitHub('pull', false); document.getElementById('syncModal').style.display = 'none'; }
+    function getTimestampStr() { const now = new Date(); const pad = (n) => String(n).padStart(2, '0'); return now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + "_" + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()); }
+    async function syncGitHub(action, isAuto) {
+        const {token, repo, path} = ghConfig; if(!token || !repo) { if(!isAuto) alert("请先配置 GitHub"); return; }
+        const badge = document.getElementById('syncBadge'); const badgeText = document.getElementById('syncText'); badge.className = 'sync-badge status-syncing'; badgeText.innerText = action==='push'?'上传...':'同步...';
+        try {
+            const headers = { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github.v3+json" };
+            
+            if (action === 'pull') {
+                const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { headers });
+                let cloudData;
+                if(getRes.ok) { 
+                    const d = await getRes.json(); 
+                    lastKnownSha = d.sha; 
+                    cloudData = JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,""))))); 
+                }
+                
+                const localTS = parseInt(localStorage.getItem('wm_last_save_ts')) || 0;
+                const cloudTS = cloudData ? (cloudData.timestamp || 0) : 0;
+                
+                if(cloudTS > localTS) { 
+                    restoreData(cloudData); 
+                    localStorage.setItem('wm_last_save_ts', cloudTS); 
+                    badge.className = 'sync-badge status-idle'; badgeText.innerText = '已更新'; 
+                    if(!isAuto) { alert("✅ 同步成功"); location.reload(); } 
+                } else { 
+                    badge.className = 'sync-badge status-idle'; badgeText.innerText = '已最新'; 
+                    if(!isAuto) {
+                        const dateStr = ts => ts ? new Date(ts).toLocaleString() : '未知';
+                        if(confirm(`☁️ 云端: ${dateStr(cloudTS)}\n🖥️ 本地: ${dateStr(localTS)}\n\n云端并非最新。是否强制用云端数据覆盖本地？`)) {
+                            restoreData(cloudData);
+                            localStorage.setItem('wm_last_save_ts', cloudTS);
+                            alert("✅ 强制同步成功");
+                            location.reload();
+                        }
+                    }
+                }
+            } else {
+                // PUSH Logic with Optimistic SHA
+                let shaToUse = lastKnownSha;
+                if (!shaToUse) {
+                     const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { headers });
+                     if(getRes.ok) { const d = await getRes.json(); shaToUse = d.sha; lastKnownSha = d.sha; }
+                }
+
+                const content = { timestamp: Date.now(), fm_records, fm_config, lm_records, lm_config, lm_userSettings };
+                const body = { message: "Wealth Master Sync", content: btoa(unescape(encodeURIComponent(JSON.stringify(content)))), sha: shaToUse };
+                
+                let res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { method: 'PUT', headers, body: JSON.stringify(body) });
+                
+                if (res.status === 409) {
+                     // Conflict: fetch latest SHA and retry
+                     const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { headers });
+                     if(getRes.ok) {
+                         const d = await getRes.json();
+                         shaToUse = d.sha; lastKnownSha = d.sha;
+                         body.sha = shaToUse;
+                         res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { method: 'PUT', headers, body: JSON.stringify(body) });
+                     }
+                }
+
+                if(res.ok) { 
+                    const resJson = await res.json();
+                    if(resJson.content && resJson.content.sha) lastKnownSha = resJson.content.sha;
+                    localStorage.setItem('wm_last_save_ts', content.timestamp); 
+                    badge.className = 'sync-badge status-idle'; badgeText.innerText = '已同步'; 
+                } else throw new Error("Upload failed");
+            }
+        } catch(e) { console.error(e); badge.className = 'sync-badge status-error'; badgeText.innerText = '失败'; if(!isAuto) alert("❌ 同步失败"); lastKnownSha = null; }
+    }
+    async function archiveToGitHub() {
+        const {token, repo} = ghConfig; if(!token || !repo) return alert("请配置 GitHub");
+        if(!confirm("创建永久存档？")) return;
+        const timestamp = getTimestampStr(); const path = `backups/wealth_archive_${timestamp}.json`;
+        try {
+            const content = { timestamp: Date.now(), fm_records, fm_config, lm_records, lm_config, lm_userSettings };
+            const body = { message: `Archive ${timestamp}`, content: btoa(unescape(encodeURIComponent(JSON.stringify(content)))) };
+            const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { method:'PUT', headers: { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github.v3+json" }, body: JSON.stringify(body) });
+            if(res.ok) alert(`✅ 存档成功: ${path}`); else alert("❌ 存档失败");
+        } catch(e) { alert("❌ 错误"); }
+    }
+    async function listCloudBackups() {
+        const {token, repo} = ghConfig; if(!token || !repo) return alert("请配置 GitHub");
+        const listEl = document.getElementById('cloudBackupList'); listEl.style.display = 'block'; listEl.innerHTML = '<div style="padding:12px;color:var(--text-sub);">⌛ 加载中...</div>';
+        try {
+            const headers = { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github.v3+json" };
+            const res = await fetch(`https://api.github.com/repos/${repo}/contents/backups`, { headers });
+            if(!res.ok) throw new Error(); const files = await res.json();
+            if(!Array.isArray(files) || files.length === 0) { listEl.innerHTML = '<div style="padding:12px;color:var(--text-sub);">📂 无备份</div>'; return; }
+            files.sort((a,b) => b.name.localeCompare(a.name));
+            listEl.innerHTML = files.map(f => `<div class="backup-file-item" onclick="restoreCloudBackup('${f.path}')"><span>📄 ${f.name}</span><span style="font-size:10px; color:var(--info);">恢复此版</span></div>`).join('');
+        } catch(e) { listEl.innerHTML = '<div style="padding:12px;color:var(--danger);">❌ 获取失败或无备份文件夹</div>'; }
+    }
+    async function restoreCloudBackup(path) {
+        if(!confirm("从 [" + path + "] 恢复？本地数据将被覆盖！")) return;
+        const {token, repo} = ghConfig;
+        try {
+            const headers = { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github.v3+json" };
+            const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { headers });
+            const d = await res.json(); const content = JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,"")))));
+            restoreData(content); alert("✅ 恢复成功"); location.reload();
+        } catch(e) { alert("❌ 恢复失败"); }
+    }
+    function restoreData(data) {
+        // 1. 更新 LocalStorage
+        if(data.fm_records) { localStorage.setItem('fmup_records', JSON.stringify(data.fm_records)); fm_records = data.fm_records; }
+        if(data.fm_config) { localStorage.setItem('fmup_config', JSON.stringify(data.fm_config)); fm_config = data.fm_config; }
+        if(data.lm_records) { localStorage.setItem('loan_max_records_v3', JSON.stringify(data.lm_records)); lm_records = data.lm_records; }
+        if(data.lm_config) { localStorage.setItem('loan_max_config_v3', JSON.stringify(data.lm_config)); lm_config = data.lm_config; }
+        if(data.lm_userSettings) { localStorage.setItem('loan_user_settings_v3', JSON.stringify(data.lm_userSettings)); lm_userSettings = data.lm_userSettings; }
+        
+        // 2. 立即刷新内存变量对应的 UI，防止 reload 失败或延迟导致的数据不一致
+        fm_init();
+        lm_init();
+        checkGlobalAlerts();
+    }
+    initGlobal();
+</script>
+</body>
 </html>
